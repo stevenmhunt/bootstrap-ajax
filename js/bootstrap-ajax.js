@@ -117,7 +117,7 @@
   if (typeof Spinner !== 'undefined') { // http://fgnass.github.com/spin.js/
     $.fn.spin = function(opts) {
       this.each(function() {
-        var $this = $(this)
+        var $this = $(this).append("<div class=\"ajax-spinner\"></div>").find(".ajax-spinner")
           , data = $this.data()
 
         if (data.spinner) {
@@ -125,11 +125,16 @@
           delete data.spinner
         }
         if (opts !== false) {
-          data.spinner = new Spinner($.extend({color: $this.css('color')}, opts)).spin(this)
+          data.spinner = new Spinner($.extend({color: $this.css('color')}, opts)).spin($this[0])
         }
       })
       return this
     }
+	$.fn.stop_spin = function() {
+		this.each(function() {
+			$(this).find(".ajax-spinner").remove();
+		});
+	}
   }
   
   function spin($el) { // http://fgnass.github.com/spin.js/
@@ -146,15 +151,27 @@
         } else if (spinner_selector_replace_closest) {
           $el.closest(spinner_selector_replace_closest).html("").spin(opts)
         } else {
-          $el.html("").spin(opts)
+          $el.spin(opts)
         }
     }
   }
   
   function stop_spin($el) {
-    if ($el.stop !== undefined) {
-      $el.stop()
-    }
+    if ($.fn.spin !== undefined) {
+		var spinner_selector = $el.attr('data-spinner')
+        , spinner_selector_replace = $el.attr('data-spinner-replace')
+        , spinner_selector_replace_closest = $el.attr('data-spinner-replace-closest')
+        
+        if (spinner_selector) {
+          $(spinner_selector).stop_spin()
+        } else if (spinner_selector_replace) {
+          $(spinner_selector_replace).stop_spin()
+        } else if (spinner_selector_replace_closest) {
+          $el.closest(spinner_selector_replace_closest).stop_spin()
+        } else {
+          $el.stop_spin()
+        }
+	}
   }
   
   function processData(data, $el) {
@@ -215,6 +232,8 @@
       }
     }
     $(document).trigger('bootstrap-ajax:success', [data, $el]);
+	
+	stop_spin($el);
   }
   
   function processError($el) {
@@ -245,6 +264,8 @@
       $(prepend_selector).prepend(msg)
     }
     $(document).trigger('bootstrap-ajax:error', [$el]);
+	
+	stop_spin($el);
   }
 
   $(function () {
